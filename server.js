@@ -83,6 +83,52 @@ app.post('/log', function (req, resp) {
   .end();
 });
 
+app.get('/metrics/users', function (req, resp) {
+  query({
+    text: 'SELECT COUNT(*) FROM (SELECT DISTINCT user_id FROM sms_log) as byuser',
+    name: 'userCount'
+  })
+  .then(function (result) {
+    resp.send({
+      count: result.rows[0].count
+    });
+  })
+  .fail(function (error) {
+    console.log(error);
+    resp.send(500);
+  })
+  .end();
+});
+
+app.get('/metrics/messages', function (req, resp) {
+  var time;
+  if (req.query.after !== undefined) {
+    var unixTime = parseInt(req.query.after, 10);
+    if (isNaN(unixTime)) {
+      resp.send(400);
+      return;
+    }
+    time = new Date(unixTime);
+  } else {
+    time = new Date(0);
+  }
+  query({
+    text: 'SELECT COUNT(*) FROM sms_log WHERE timestamp > $1',
+    values: [time],
+    name: 'messageCount'
+  })
+  .then(function (result) {
+    resp.send({
+      count: result.rows[0].count
+    });
+  })
+  .fail(function (error) {
+    console.log(error);
+    resp.send(500);
+  })
+  .end();
+});
+
 
 // TODO: handle reconnection
 Q.all([dbConnect(), setupDB()])
