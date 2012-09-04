@@ -10,6 +10,7 @@ var express = require('express');
 var http = require('http');
 var Q = require('q');
 var pg = require('pg');
+var s3 = require('connect-s3');
 
 // Configuration
 var port = process.env.PORT || 3001;
@@ -49,6 +50,12 @@ function setupDB() {
 }
 
 app.use(express.json());
+
+app.use(s3({
+  pathPrefix: '/web',
+  remotePrefix: process.env.STATIC_PREFIX
+}));
+
 
 app.use(function (req, resp, next) {
   resp.header('Access-Control-Allow-Origin', '*');
