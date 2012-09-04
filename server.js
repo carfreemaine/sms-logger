@@ -50,6 +50,11 @@ function setupDB() {
 
 app.use(express.json());
 
+app.use(function (req, resp, next) {
+  resp.header('Access-Control-Allow-Origin', '*');
+  next();
+});
+
 app.post('/log', function (req, resp) {
   var data = req.body;
   if (data === undefined || data.user === undefined) {
