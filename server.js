@@ -49,6 +49,18 @@ function setupDB() {
   });
 }
 
+// Parse a string representation of Unix time into a Date object
+function parseUnixTime(str) {
+  if (str === undefined) {
+    return null;
+  }
+  var unixTime = parseInt(str, 10);
+  if (isNaN(unixTime)) {
+    throw new Error('Unable to parse string as Unix time.');
+  }
+  return new Date(unixTime);
+}
+
 app.use(express.json());
 
 app.use(s3({
@@ -96,8 +108,25 @@ app.post('/log', function (req, resp) {
 });
 
 app.get('/metrics/users', function (req, resp) {
+  var after;
+  var until;
+  try {
+    after = parseUnixTime(req.query.after);
+    until = parseUnixTime(req.query.until);
+  } catch (e) {
+    resp.send(400);
+    return;
+  }
+  if (after === null) {
+    after = new Date(0);
+  }
+  if (until === null) {
+    until = new Date();
+  }
+
   query({
-    text: 'SELECT COUNT(*) FROM (SELECT DISTINCT user_id FROM sms_log) as byuser',
+    text: 'SELECT COUNT(*) FROM (SELECT DISTINCT user_id FROM sms_log WHERE timestamp > $1 AND timestamp <= $2) as byuser',
+    values: [after, until],
     name: 'userCount'
   })
   .then(function (result) {
@@ -113,20 +142,25 @@ app.get('/metrics/users', function (req, resp) {
 });
 
 app.get('/metrics/messages', function (req, resp) {
-  var time;
-  if (req.query.after !== undefined) {
-    var unixTime = parseInt(req.query.after, 10);
-    if (isNaN(unixTime)) {
-      resp.send(400);
-      return;
-    }
-    time = new Date(unixTime);
-  } else {
-    time = new Date(0);
+  var after;
+  var until;
+  try {
+    after = parseUnixTime(req.query.after);
+    until = parseUnixTime(req.query.until);
+  } catch (e) {
+    resp.send(400);
+    return;
   }
+  if (after === null) {
+    after = new Date(0);
+  }
+  if (until === null) {
+    until = new Date();
+  }
+
   query({
-    text: 'SELECT COUNT(*) FROM sms_log WHERE timestamp > $1',
-    values: [time],
+    text: 'SELECT COUNT(*) FROM sms_log WHERE timestamp > $1 AND timestamp <= $2',
+    values: [after, until],
     name: 'messageCount'
   })
   .then(function (result) {
