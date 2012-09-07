@@ -62,6 +62,7 @@ function parseUnixTime(str) {
 }
 
 app.use(express.json());
+app.use(express.compress());
 
 app.use(s3({
   pathPrefix: '/web',
