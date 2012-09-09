@@ -177,18 +177,6 @@ app.get('/metrics/messages', function (req, resp) {
 });
 
 app.get('/data/messages', function (req, resp) {
-  var select = req.query.$select;
-  // For now, we only support certain forms of this request
-  if (select === undefined) {
-    resp.send(501);
-    return;
-  }
-
-  if (select !== 'timestamp') {
-    resp.send(501);
-    return;
-  }
-
   var startIndex = req.query.startIndex;
   var count = req.query.count;
   if (startIndex === undefined) {
@@ -203,6 +191,30 @@ app.get('/data/messages', function (req, resp) {
   }
   if (isNaN(startIndex) || isNaN(count)) {
     resp.send(400);
+    return;
+  }
+
+  var select = req.query.$select;
+  // For now, we only support certain forms of this request
+  if (select === undefined) {
+    query({
+      text: 'SELECT * FROM sms_log ORDER BY timestamp OFFSET $1 LIMIT $2',
+      values: [startIndex, count],
+      name: 'messages'
+    })
+    .then(function (result) {
+      resp.send(result.rows);
+    })
+    .fail(function (error) {
+      console.log(error);
+      resp.send(500);
+    })
+    .end();
+    return;
+  }
+
+  if (select !== 'timestamp') {
+    resp.send(501);
     return;
   }
 
