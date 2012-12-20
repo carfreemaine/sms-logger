@@ -105,7 +105,7 @@ app.post('/log', function (req, resp) {
     console.log(error);
     resp.send(500);
   })
-  .end();
+  .done();
 });
 
 app.get('/metrics/users', function (req, resp) {
@@ -139,7 +139,7 @@ app.get('/metrics/users', function (req, resp) {
     console.log(error);
     resp.send(500);
   })
-  .end();
+  .done();
 });
 
 app.get('/metrics/messages', function (req, resp) {
@@ -173,7 +173,7 @@ app.get('/metrics/messages', function (req, resp) {
     console.log(error);
     resp.send(500);
   })
-  .end();
+  .done();
 });
 
 function sendCsv(rows, resp) {
@@ -253,7 +253,7 @@ function returnMessages(req, resp) {
       console.log(error);
       resp.send(500);
     })
-    .end();
+    .done();
     return;
   }
 
@@ -280,7 +280,7 @@ function returnMessages(req, resp) {
     console.log(error);
     resp.send(500);
   })
-  .end();
+  .done();
 }
 
 function setOutputFormat(format) {
