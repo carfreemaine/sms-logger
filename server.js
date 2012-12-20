@@ -6,6 +6,7 @@
  * Logs information from the bus arrivals SMS service to a postgresql database.
  */
 
+var querystring = require('querystring');
 var express = require('express');
 var http = require('http');
 var Q = require('q');
@@ -185,7 +186,7 @@ function sendCsv(rows, resp) {
     var headers = [];
     for (header in rows[0]) {
       if (rows[0].hasOwnProperty(header)) {
-        headers.push(header);
+        headers.push(querystring.escape(header));
       }
     }
     resp.write(headers.join(','));
@@ -197,7 +198,7 @@ function sendCsv(rows, resp) {
     var row = [];
     for (i = 0; i < rows.length; i += 1) {
       for (j = 0; j < headers.length; j += 1) {
-        row[j] = rows[i][headers[j]];
+        row[j] = querystring.escape(rows[i][headers[j]]);
       }
       resp.write(row.join(','));
       resp.write('\n');
