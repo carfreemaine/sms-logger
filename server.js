@@ -176,7 +176,42 @@ app.get('/metrics/messages', function (req, resp) {
   .end();
 });
 
-app.get('/data/messages', function (req, resp) {
+function sendCsv(rows, resp) {
+  resp.setHeader('Content-Type', 'text/csv');
+
+  if (rows.length > 0) {
+    // Headers
+    var header;
+    var headers = [];
+    for (header in rows[0]) {
+      if (rows[0].hasOwnProperty(header)) {
+        headers.push(header);
+      }
+    }
+    resp.write(headers.join(','));
+    resp.write('\n');
+
+    // Data rows
+    var i;
+    var j;
+    var row = [];
+    for (i = 0; i < rows.length; i += 1) {
+      for (j = 0; j < headers.length; j += 1) {
+        row[j] = rows[i][headers[j]];
+      }
+      resp.write(row.join(','));
+      resp.write('\n');
+    }
+
+    resp.end();
+  } else {
+    resp.end();
+  }
+}
+
+function returnMessages(req, resp) {
+  var format = req.outputFormat;
+
   var startIndex = req.query.startIndex;
   var count = req.query.count;
   if (startIndex === undefined) {
@@ -203,7 +238,16 @@ app.get('/data/messages', function (req, resp) {
       name: 'messages'
     })
     .then(function (result) {
-      resp.send(result.rows);
+      if (format === 'json') {
+        resp.send(result.rows);
+      } else if (format === 'csv') {
+        sendCsv(result.rows, resp);
+      } else {
+        resp.send(500);
+      }
+    }, function (reason) {
+      console.log(reason);
+      resp.end();
     })
     .fail(function (error) {
       console.log(error);
@@ -224,14 +268,33 @@ app.get('/data/messages', function (req, resp) {
     name: 'timestamps'
   })
   .then(function (result) {
-    resp.send(result.rows);
+    if (format === 'json') {
+      resp.send(result.rows);
+    } else if (format === 'csv') {
+      sendCsv(result.rows, resp);
+    } else {
+      resp.send(500);
+    }
   })
   .fail(function (error) {
     console.log(error);
     resp.send(500);
   })
   .end();
-});
+}
+
+function setOutputFormat(format) {
+  return function (req, res, next) {
+    req.outputFormat = format;
+    next();
+  };
+}
+
+// Fetch raw data as JSON
+app.get('/data/messages', setOutputFormat('json'), returnMessages);
+
+// Fetch raw data as CSV
+app.get('/data/messages.csv', setOutputFormat('csv'), returnMessages);
 
 
 // TODO: handle reconnection
