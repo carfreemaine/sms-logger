@@ -178,7 +178,7 @@ app.get('/metrics/messages', function (req, resp) {
 });
 
 function sendCsv(rows, resp) {
-  resp.setHeader('Content-Type', 'text/csv');
+  resp.setHeader('Content-Type', 'text/plain');
 
   if (rows.length > 0) {
     // Headers
@@ -186,10 +186,10 @@ function sendCsv(rows, resp) {
     var headers = [];
     for (header in rows[0]) {
       if (rows[0].hasOwnProperty(header)) {
-        headers.push(querystring.escape(header));
+        headers.push(header);
       }
     }
-    resp.write(headers.join(','));
+    resp.write(JSON.stringify(headers));
     resp.write('\n');
 
     // Data rows
@@ -198,9 +198,9 @@ function sendCsv(rows, resp) {
     var row = [];
     for (i = 0; i < rows.length; i += 1) {
       for (j = 0; j < headers.length; j += 1) {
-        row[j] = querystring.escape(rows[i][headers[j]]);
+        row[j] = rows[i][headers[j]];
       }
-      resp.write(row.join(','));
+      resp.write(JSON.stringify(row));
       resp.write('\n');
     }
 
